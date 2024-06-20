@@ -4,7 +4,7 @@ on:
   push:
   
 jobs:
-  Control-Benchmark:
+  Microbench:
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v4
@@ -28,7 +28,7 @@ jobs:
       run: scons build/X86/gem5.opt -j 8
     
     - name: benchmark
-      run: python3 microbench.py
+      run: python3 microbench_branch_predictor.py
 
     - uses: actions/upload-artifact@v4
       with:
