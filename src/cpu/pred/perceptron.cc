@@ -56,7 +56,7 @@ PerceptronBP::PerceptronBP(const PerceptronBPParams &params)
       perceptronCount(params.perceptronCount),
       n(params.n),
     //   localPredictorSets(localPredictorSize / localCtrBits),
-      perceptronTable(perceptronCount, std::vector<int>),
+      perceptronTable(perceptronCount, std::vector<int>(n)),
       indexMask(perceptronCount - 1),
       globalHistory(0)
 {
