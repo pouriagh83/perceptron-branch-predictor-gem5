@@ -53,26 +53,27 @@ namespace branch_prediction
 
 PerceptronBP::PerceptronBP(const PerceptronBPParams &params)
     : BPredUnit(params),
-      localPredictorSize(params.localPredictorSize),
-      localCtrBits(params.localCtrBits),
-      localPredictorSets(localPredictorSize / localCtrBits),
-      localCtrs(localPredictorSets, SatCounter8(localCtrBits)),
-      indexMask(localPredictorSets - 1)
+      perceptronCount(params.perceptronCount),
+      n(params.n),
+    //   localPredictorSets(localPredictorSize / localCtrBits),
+      perceptronTable(perceptronCount, std::vector<SatCounter8>(n+1)),
+      indexMask(perceptronCount - 1),
+      globalHistory(0)
 {
-    if (!isPowerOf2(localPredictorSize)) {
-        fatal("Invalid local predictor size!\n");
+    if (!isPowerOf2(perceptronCount)) {
+        fatal("Invalid number of perceptrons!\n");
     }
 
-    if (!isPowerOf2(localPredictorSets)) {
-        fatal("Invalid number of local predictor sets! Check localCtrBits.\n");
+    if (!isPowerOf2(n+1)) {
+        fatal("Invalid HistorySize!\n");
     }
 
     DPRINTF(Fetch, "index mask: %#x\n", indexMask);
 
-    DPRINTF(Fetch, "local predictor size: %i\n",
-            localPredictorSize);
+    DPRINTF(Fetch, "number of perceptron: %i\n",
+            perceptronCount);
 
-    DPRINTF(Fetch, "local counter bits: %i\n", localCtrBits);
+    DPRINTF(Fetch, "global History size: %i\n", n);
 
     DPRINTF(Fetch, "instruction shift amount: %i\n",
             instShiftAmt);
@@ -83,6 +84,8 @@ PerceptronBP::updateHistories(ThreadID tid, Addr pc, bool uncond,
                          bool taken, Addr target, void * &bp_history)
 {
 // Place holder for a function that is called to update predictor history
+    globalHistory = (globalHistory << 1) | (taken ? 1 : 0);
+    globalHistory &= (1 << n) - 1;
 }
 
 
@@ -95,12 +98,20 @@ PerceptronBP::lookup(ThreadID tid, Addr branch_addr, void * &bp_history)
     DPRINTF(Fetch, "Looking up index %#x\n",
             local_predictor_idx);
 
-    uint8_t counter_val = localCtrs[local_predictor_idx];
+    int y = perceptronTable[local_predictor_idx][0];
+
+    for (int i = 0; i < n; i++) {
+        int bit = (globalHistory >> i) & 1;
+        if (bit)
+            y += perceptronTable[local_predictor_idx][i + 1];
+        else
+            y -= perceptronTable[local_predictor_idx][i + 1];
+    }    
 
     DPRINTF(Fetch, "prediction is %i.\n",
-            (int)counter_val);
+            y);
 
-    taken = getPrediction(counter_val);
+    taken = y >= 0;
 
     return taken;
 }
@@ -110,7 +121,6 @@ PerceptronBP::update(ThreadID tid, Addr branch_addr, bool taken, void *&bp_histo
                 bool squashed, const StaticInstPtr & inst, Addr target)
 {
     assert(bp_history == NULL);
-    unsigned local_predictor_idx;
 
     // No state to restore, and we do not update on the wrong
     // path.
@@ -119,16 +129,40 @@ PerceptronBP::update(ThreadID tid, Addr branch_addr, bool taken, void *&bp_histo
     }
 
     // Update the local predictor.
-    local_predictor_idx = getLocalIndex(branch_addr);
+    unsigned local_predictor_idx = getLocalIndex(branch_addr);
 
+    int t = taken ? 1 : -1;
+    // t is the actual value
+    // y is the value that was predicted
+    int y = perceptronTable[index][0]; // Start with the bias
+    for (int i = 0; i < n; ++i) {
+        int bit = (globalHistory >> i) & 1;
+        if (bit)
+            y += perceptronTable[index][i + 1];
+        else
+            y -= perceptronTable[index][i + 1];
+    }
+    int y_pred = y >= 0 ? 1 : -1;
+    
+    if (y_pred == t){
+        return; // no update needed 
+    }
+    perceptronTable[local_predictor_idx][0] += t;
     DPRINTF(Fetch, "Looking up index %#x\n", local_predictor_idx);
 
     if (taken) {
         DPRINTF(Fetch, "Branch updated as taken.\n");
-        localCtrs[local_predictor_idx]++;
+        perceptronTable[local_predictor_idx][0]++;
     } else {
         DPRINTF(Fetch, "Branch updated as not taken.\n");
-        localCtrs[local_predictor_idx]--;
+        perceptronTable[local_predictor_idx][0]--;
+    }
+    for (int i = 0; i < n; ++i) {
+        int bit = (globalHistory >> i) & 1;
+        if (bit)
+            perceptronTable[local_predictor_idx][i + 1] += (taken ? 1 : -1);
+        else
+            perceptronTable[local_predictor_idx][i + 1] -= (taken ? 1 : -1);
     }
 }
 

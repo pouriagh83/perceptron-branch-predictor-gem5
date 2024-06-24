@@ -96,19 +96,20 @@ class PerceptronBP : public BPredUnit
     inline unsigned getLocalIndex(Addr &PC);
 
     /** Size of the local predictor. */
-    const unsigned localPredictorSize;
+    const unsigned perceptronCount;
 
     /** Number of bits of the local predictor's counters. */
-    const unsigned localCtrBits;
+    const unsigned n;
 
     /** Number of sets. */
-    const unsigned localPredictorSets;
+    //const unsigned localPredictorSets;
 
     /** Array of counters that make up the local predictor. */
-    std::vector<SatCounter8> localCtrs;
+    std::vector<std::vector<SatCounter8>> perceptronTable;
 
     /** Mask to get index bits. */
     const unsigned indexMask;
+    unsigned globalHistory;
 };
 
 } // namespace branch_prediction
