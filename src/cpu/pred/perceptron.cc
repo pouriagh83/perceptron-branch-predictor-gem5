@@ -56,7 +56,7 @@ PerceptronBP::PerceptronBP(const PerceptronBPParams &params)
       perceptronCount(params.perceptronCount),
       n(params.n),
     //   localPredictorSets(localPredictorSize / localCtrBits),
-      perceptronTable(perceptronCount, std::vector<SatCounter8>(n+1)),
+      perceptronTable(perceptronCount, std::vector<int>),
       indexMask(perceptronCount - 1),
       globalHistory(0)
 {
@@ -134,13 +134,13 @@ PerceptronBP::update(ThreadID tid, Addr branch_addr, bool taken, void *&bp_histo
     int t = taken ? 1 : -1;
     // t is the actual value
     // y is the value that was predicted
-    int y = perceptronTable[index][0]; // Start with the bias
+    int y = perceptronTable[local_predictor_idx][0]; // Start with the bias
     for (int i = 0; i < n; ++i) {
         int bit = (globalHistory >> i) & 1;
         if (bit)
-            y += perceptronTable[index][i + 1];
+            y += perceptronTable[local_predictor_idx][i + 1];
         else
-            y -= perceptronTable[index][i + 1];
+            y -= perceptronTable[local_predictor_idx][i + 1];
     }
     int y_pred = y >= 0 ? 1 : -1;
     
@@ -171,7 +171,7 @@ bool
 PerceptronBP::getPrediction(uint8_t &count)
 {
     // Get the MSB of the count
-    return (count >> (localCtrBits - 1));
+    return (count >> (n - 1));
 }
 
 inline

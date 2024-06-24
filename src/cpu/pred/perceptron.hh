@@ -105,7 +105,7 @@ class PerceptronBP : public BPredUnit
     //const unsigned localPredictorSets;
 
     /** Array of counters that make up the local predictor. */
-    std::vector<std::vector<SatCounter8>> perceptronTable;
+    std::vector<std::vector<int>> perceptronTable;
 
     /** Mask to get index bits. */
     const unsigned indexMask;
