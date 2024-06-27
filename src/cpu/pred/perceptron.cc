@@ -57,7 +57,7 @@ PerceptronBP::PerceptronBP(const PerceptronBPParams &params)
       history_length(params.history_length),
       perceptronTable(n_perceptron, std::vector<int>(history_length + 1, 0)),
       indexMask(n_perceptron - 1),
-      threshold(getThreshold(history_length)),
+      threshold(params.threshold),
       globalHistory(0)
 {
     if (!isPowerOf2(n_perceptron)) {
@@ -85,7 +85,6 @@ PerceptronBP::updateHistories(ThreadID tid, Addr pc, bool uncond,
 {
 // Place holder for a function that is called to update predictor history
     globalHistory = (globalHistory << 1) | (taken ? 1 : 0);
-    globalHistory &= (1 << history_length) - 1;
 }
 
 
@@ -143,7 +142,7 @@ PerceptronBP::update(ThreadID tid, Addr branch_addr, bool taken, void *&bp_histo
     }
     int y_pred = y >= 0 ? 1 : -1;
     
-    if (y_pred == t && abs(y) >= threshold){
+    if (y_pred == t && std::abs(y) >= threshold){
         return; // no update needed 
     }
     perceptronTable[local_predictor_idx][0] += t;
@@ -151,10 +150,8 @@ PerceptronBP::update(ThreadID tid, Addr branch_addr, bool taken, void *&bp_histo
 
     if (taken) {
         DPRINTF(Fetch, "Branch updated as taken.\n");
-        perceptronTable[local_predictor_idx][0]++;
     } else {
         DPRINTF(Fetch, "Branch updated as not taken.\n");
-        perceptronTable[local_predictor_idx][0]--;
     }
     for (int i = 0; i < history_length; ++i) {
         int bit = (globalHistory >> i) & 1;
