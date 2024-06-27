@@ -54,7 +54,7 @@ namespace branch_prediction
 PerceptronBP::PerceptronBP(const PerceptronBPParams &params)
     : BPredUnit(params),
       n_perceptron(params.n_perceptron),
-      hsitory_length(params.history_length),
+      history_length(params.history_length),
       perceptronTable(n_perceptron, std::vector<int>(history_length)),
       indexMask(n_perceptron - 1),
       threshold(getThreshold(history_length)),
