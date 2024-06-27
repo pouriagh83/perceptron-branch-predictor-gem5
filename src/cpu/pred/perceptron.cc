@@ -55,7 +55,7 @@ PerceptronBP::PerceptronBP(const PerceptronBPParams &params)
     : BPredUnit(params),
       n_perceptron(params.n_perceptron),
       hsitory_length(params.history_length),
-      perceptronTable(n_perceptron, std::vector<int>(n)),
+      perceptronTable(n_perceptron, std::vector<int>(history_length)),
       indexMask(n_perceptron - 1),
       threshold(getThreshold(history_length)),
       globalHistory(0)
@@ -85,7 +85,7 @@ PerceptronBP::updateHistories(ThreadID tid, Addr pc, bool uncond,
 {
 // Place holder for a function that is called to update predictor history
     globalHistory = (globalHistory << 1) | (taken ? 1 : 0);
-    globalHistory &= (1 << n) - 1;
+    globalHistory &= (1 << history_length) - 1;
 }
 
 
@@ -100,7 +100,7 @@ PerceptronBP::lookup(ThreadID tid, Addr branch_addr, void * &bp_history)
 
     int y = perceptronTable[local_predictor_idx][0];
 
-    for (int i = 0; i < n; i++) {
+    for (int i = 0; i < history_length; i++) {
         int bit = (globalHistory >> i) & 1;
         if (bit)
             y += perceptronTable[local_predictor_idx][i + 1];
@@ -135,7 +135,7 @@ PerceptronBP::update(ThreadID tid, Addr branch_addr, bool taken, void *&bp_histo
     // t is the actual value
     // y is the value that was predicted
     int y = perceptronTable[local_predictor_idx][0]; // Start with the bias
-    for (int i = 0; i < n; ++i) {
+    for (int i = 0; i < history_length; ++i) {
         int bit = (globalHistory >> i) & 1;
         if (bit)
             y += perceptronTable[local_predictor_idx][i + 1];
@@ -157,7 +157,7 @@ PerceptronBP::update(ThreadID tid, Addr branch_addr, bool taken, void *&bp_histo
         DPRINTF(Fetch, "Branch updated as not taken.\n");
         perceptronTable[local_predictor_idx][0]--;
     }
-    for (int i = 0; i < n; ++i) {
+    for (int i = 0; i < history_length; ++i) {
         int bit = (globalHistory >> i) & 1;
         if (bit)
             perceptronTable[local_predictor_idx][i + 1] += (taken ? 1 : -1);
@@ -171,7 +171,7 @@ bool
 PerceptronBP::getPrediction(uint8_t &count)
 {
     // Get the MSB of the count
-    return (count >> (n - 1));
+    return (count >> (history_length - 1));
 }
 
 inline
@@ -185,7 +185,7 @@ inline
 unsigned
 PerceptronBP::getThreshold(unsigned history_length)
 {
-    return std::floor(1.93 * history_length + 14)
+    return std::floor(1.93 * history_length + 14);
 }
 
 } // namespace branch_prediction
