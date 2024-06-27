@@ -55,7 +55,7 @@ PerceptronBP::PerceptronBP(const PerceptronBPParams &params)
     : BPredUnit(params),
       n_perceptron(params.n_perceptron),
       history_length(params.history_length),
-      perceptronTable(n_perceptron, std::vector<int>(history_length)),
+      perceptronTable(n_perceptron, std::vector<int>(history_length + 1, 0)),
       indexMask(n_perceptron - 1),
       threshold(getThreshold(history_length)),
       globalHistory(0)
@@ -133,7 +133,7 @@ PerceptronBP::update(ThreadID tid, Addr branch_addr, bool taken, void *&bp_histo
     int t = taken ? 1 : -1;
     // t is the actual value
     // y is the value that was predicted
-    int y = perceptronTable[local_predictor_idx][0]; // Start with the bias
+    int y = perceptronTable[local_predictor_idx][0]; // start with the bias
     for (int i = 0; i < history_length; ++i) {
         int bit = (globalHistory >> i) & 1;
         if (bit)
