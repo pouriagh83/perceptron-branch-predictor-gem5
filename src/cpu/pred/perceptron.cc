@@ -118,8 +118,6 @@ void
 PerceptronBP::update(ThreadID tid, Addr branch_addr, bool taken, void *&bp_history,
                 bool squashed, const StaticInstPtr & inst, Addr target)
 {
-    assert(bp_history == NULL);
-
     // No state to restore, and we do not update on the wrong
     // path.
     if (squashed) {
@@ -143,6 +141,7 @@ PerceptronBP::update(ThreadID tid, Addr branch_addr, bool taken, void *&bp_histo
     int y_pred = y >= 0 ? 1 : -1;
     
     if (y_pred == t && std::abs(y) >= threshold){
+        updateHistories(tid, branch_addr, false, taken, target, bp_history);
         return; // no update needed 
     }
     perceptronTable[local_predictor_idx][0] += t;
@@ -160,6 +159,7 @@ PerceptronBP::update(ThreadID tid, Addr branch_addr, bool taken, void *&bp_histo
         else
             perceptronTable[local_predictor_idx][i + 1] -= (taken ? 1 : -1);
     }
+    updateHistories(tid, branch_addr, false, taken, target, bp_history);
 }
 
 inline
