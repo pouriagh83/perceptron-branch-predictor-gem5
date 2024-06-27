@@ -14,8 +14,8 @@ struct PerceptronBPParams
     : public BranchPredictorParams
 {
     PerceptronBP * create();
-    size_t perceptronCount;
-    size_t n;
+    size_t n_perceptron;
+    size_t history_length;
 };
 
 #endif // __PARAMS__PerceptronBP__

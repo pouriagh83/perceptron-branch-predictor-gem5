@@ -53,27 +53,27 @@ namespace branch_prediction
 
 PerceptronBP::PerceptronBP(const PerceptronBPParams &params)
     : BPredUnit(params),
-      perceptronCount(params.perceptronCount),
-      n(params.n),
-    //   localPredictorSets(localPredictorSize / localCtrBits),
-      perceptronTable(perceptronCount, std::vector<int>(n)),
-      indexMask(perceptronCount - 1),
+      n_perceptron(params.n_perceptron),
+      hsitory_length(params.history_length),
+      perceptronTable(n_perceptron, std::vector<int>(n)),
+      indexMask(n_perceptron - 1),
+      threshold(getThreshold(history_length)),
       globalHistory(0)
 {
-    if (!isPowerOf2(perceptronCount)) {
+    if (!isPowerOf2(n_perceptron)) {
         fatal("Invalid number of perceptrons!\n");
     }
 
-    if (!isPowerOf2(n+1)) {
+    if (!isPowerOf2(history_length+1)) {
         fatal("Invalid HistorySize!\n");
     }
 
     DPRINTF(Fetch, "index mask: %#x\n", indexMask);
 
     DPRINTF(Fetch, "number of perceptron: %i\n",
-            perceptronCount);
+            n_perceptron);
 
-    DPRINTF(Fetch, "global History size: %i\n", n);
+    DPRINTF(Fetch, "global History size: %i\n", history_length);
 
     DPRINTF(Fetch, "instruction shift amount: %i\n",
             instShiftAmt);
@@ -144,7 +144,7 @@ PerceptronBP::update(ThreadID tid, Addr branch_addr, bool taken, void *&bp_histo
     }
     int y_pred = y >= 0 ? 1 : -1;
     
-    if (y_pred == t){
+    if (y_pred == t && abs(y) >= threshold){
         return; // no update needed 
     }
     perceptronTable[local_predictor_idx][0] += t;
@@ -181,6 +181,12 @@ PerceptronBP::getLocalIndex(Addr &branch_addr)
     return (branch_addr >> instShiftAmt) & indexMask;
 }
 
+inline
+unsigned
+PerceptronBP::getThreshold(unsigned history_length)
+{
+    return std::floor(1.93 * history_length + 14)
+}
 
 } // namespace branch_prediction
 } // namespace gem5

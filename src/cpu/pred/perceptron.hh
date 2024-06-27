@@ -95,11 +95,15 @@ class PerceptronBP : public BPredUnit
     /** Calculates the local index based on the PC. */
     inline unsigned getLocalIndex(Addr &PC);
 
+    //calculate the optimized threshold 
+    inline unsigned getThreshold(unsigned history_length);
+
     /** Size of the local predictor. */
-    const unsigned perceptronCount;
+    const unsigned n_perceptron;
 
     /** Number of bits of the local predictor's counters. */
-    const unsigned n;
+    const unsigned history_length;
+    const unsigned threshold;
 
     /** Number of sets. */
     //const unsigned localPredictorSets;
