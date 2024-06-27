@@ -112,7 +112,6 @@ PerceptronBP::lookup(ThreadID tid, Addr branch_addr, void * &bp_history)
             y);
 
     taken = y >= 0;
-    if(abs(y) < threshold) taken = false;
     return taken;
 }
 
