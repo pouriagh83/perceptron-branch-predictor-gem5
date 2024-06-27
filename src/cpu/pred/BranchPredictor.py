@@ -161,7 +161,7 @@ class PerceptronBP(BranchPredictor):
     cxx_class = "gem5::branch_prediction::PerceptronBP"
     cxx_header = "cpu/pred/perceptron.hh"
 
-    n_perceptron = Param.Unsigned(16, "Size of local predictor")
+    n_perceptron = Param.Unsigned(8, "Size of local predictor")
     history_length = Param.Unsigned(31, "Bits per counter")
 
 class LocalBP(BranchPredictor):
@@ -192,9 +192,9 @@ class BiModeBP(BranchPredictor):
     cxx_class = "gem5::branch_prediction::BiModeBP"
     cxx_header = "cpu/pred/bi_mode.hh"
 
-    globalPredictorSize = Param.Unsigned(32, "Size of global predictor")
+    globalPredictorSize = Param.Unsigned(16, "Size of global predictor")
     globalCtrBits = Param.Unsigned(2, "Bits per counter")
-    choicePredictorSize = Param.Unsigned(32, "Size of choice predictor")
+    choicePredictorSize = Param.Unsigned(16, "Size of choice predictor")
     choiceCtrBits = Param.Unsigned(2, "Bits of choice counters")
 
 
